@@ -36,12 +36,14 @@ export default function LoginForm() {
     try {
       console.log("Creating account with data:", data);
       const response = await loginUser(data);
-      if (!response.token) {
+
+      console.log(response)
+      if (!response.message) {
         const error = await response.json();
         setServerError(error.message || "Failed to create account");
       } else {
         //navigate to the dashboard or home page
-        console.log("Account created successfully:", response);
+        console.log("Login successfully:", response);
         router.push("/dashboard");
       }
     } catch (error) {
