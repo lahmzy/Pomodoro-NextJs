@@ -9,6 +9,7 @@ import React from "react";
 import { loginUser, registerUser } from "../lib/api";
 import FormError from "../ui/FormError";
 import { useRouter } from "next/navigation";
+import { useAuthStore } from "../lib/store/authStore";
 
 const formSchema = z.object({
   email: z.email("Invalid email address"),
@@ -28,6 +29,7 @@ export default function LoginForm() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [serverError, setServerError] = React.useState("");
   const router = useRouter();
+  const { setLoggedIn } = useAuthStore();
 
   const onSubmit = async (data: FormSchema) => {
     setIsLoading(true);
@@ -37,11 +39,12 @@ export default function LoginForm() {
       console.log("Creating account with data:", data);
       const response = await loginUser(data);
 
-      console.log(response)
+      console.log(response);
       if (!response.message) {
         const error = await response.json();
         setServerError(error.message || "Failed to create account");
       } else {
+        setLoggedIn(true); // U
         //navigate to the dashboard or home page
         console.log("Login successfully:", response);
         router.push("/dashboard");

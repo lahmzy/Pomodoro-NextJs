@@ -62,7 +62,7 @@ export default function Navbar() {
   );
 
   return (
-    <nav className="bg-white shadow-md px-4 py-3">
+    <nav className=" shadow-md px-4 py-3 relative bg-[#fff]">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
         <Link href="/" className="text-xl font-bold text-gray-800">
           AI Pomodoro
@@ -88,7 +88,7 @@ export default function Navbar() {
       {/* Mobile Menu */}
 
       {isOpen && (
-        <div className="md:hidden mt-2 space-y-2 pb-4">
+        <div className="md:hidden space-y-2 pb-4 absolute top-2 mt-12">
           <Link href="/" className="block text-gray-700 hover:text-gray-600">
             Home
           </Link>
