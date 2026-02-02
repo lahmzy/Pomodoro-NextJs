@@ -6,10 +6,11 @@ import * as z from "zod";
 import Input from "@/components/ui/Input";
 import Button from "../ui/Button";
 import React from "react";
-import { loginUser, registerUser } from "../lib/api";
+import { loginUser } from "../lib/api";
 import FormError from "../ui/FormError";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "../lib/store/authStore";
+import { error } from "console";
 
 const formSchema = z.object({
   email: z.email("Invalid email address"),
@@ -35,23 +36,24 @@ export default function LoginForm() {
     setIsLoading(true);
     setServerError("");
     console.log("Form submitted:", data);
-    try {
-      console.log("Creating account with data:", data);
-      const response = await loginUser(data);
 
-      console.log(response);
-      if (!response.message) {
-        const error = await response.json();
-        setServerError(error.message || "Failed to create account");
+    try {
+      console.log("account login with data:", data);
+      const response = await loginUser(data);
+      console.log("Account login response:", response);
+      if (response.error) {
+        setServerError(response.error);
+      } else if (response.twoFaRequired) {
+        router.push("/verify-2fa");
       } else {
-        setLoggedIn(true); // U
+        setLoggedIn(true); // Update the auth store state
         //navigate to the dashboard or home page
-        console.log("Login successfully:", response);
+        console.log("Account logged in successfully:", response);
         router.push("/dashboard");
       }
     } catch (error) {
       setServerError(
-        "An error occurred while creating your account. try again later."
+        "An error occurred while logging in. Please try again later.",
       );
     } finally {
       setIsLoading(false);
@@ -63,7 +65,7 @@ export default function LoginForm() {
       onSubmit={handleSubmit(onSubmit)}
       className="space-y-4 w-full max-w-md"
     >
-      <h2 className="text-2xl text-black font-bold mb-4">Login</h2>
+      <h2 className="text-2xl font-bold mb-4">Login</h2>
 
       {serverError && <FormError message={serverError} />}
 
@@ -73,7 +75,6 @@ export default function LoginForm() {
         {...register("email")}
         error={errors.email?.message}
         id="email"
-        className="text-black"
       />
 
       <Input
@@ -82,12 +83,36 @@ export default function LoginForm() {
         {...register("password")}
         error={errors.password?.message}
         id="password"
-        className="text-black"
       />
 
       <Button type="submit" className="w-full" disabled={isLoading}>
         {isLoading ? "Login Account..." : "Login"}
       </Button>
+
+      {/* Divider */}
+      <div className="flex items-center my-4">
+        <div className="flex-grow border-t border-gray-300"></div>
+        <span className="px-2 text-gray-500 text-sm">or</span>
+        <div className="flex-grow border-t border-gray-300"></div>
+      </div>
+
+      {/* Social Login Buttons */}
+      <div className="flex flex-col space-y-2">
+        <a href={`${process.env.NEXT_PUBLIC_API_URL}/auth/google`}>
+          <Button type="button" className="w-full bg-red-500 hover:bg-red-600">
+            Login with Google
+          </Button>
+        </a>
+
+        <a href={`${process.env.NEXT_PUBLIC_API_URL}/auth/github`}>
+          <Button
+            type="button"
+            className="w-full bg-gray-800 hover:bg-gray-900"
+          >
+            Login with Github
+          </Button>
+        </a>
+      </div>
     </form>
   );
 }
