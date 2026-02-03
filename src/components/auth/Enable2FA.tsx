@@ -1,12 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function Enable2FA() {
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [code, setCode] = useState("");
+  const [isEnabled, setIsEnabled] = useState<boolean | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [statusType, setStatusType] = useState<"success" | "error" | null>(
+    null,
+  );
 
   const generateSecret = async () => {
+    setStatusMessage(null);
+    setStatusType(null);
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/auth/2fa/generate`,
@@ -28,6 +35,8 @@ export default function Enable2FA() {
   };
 
   const enable2FA = async () => {
+    setStatusMessage(null);
+    setStatusType(null);
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/auth/2fa/enable`,
@@ -47,7 +56,8 @@ export default function Enable2FA() {
 
       const data = await response.json();
       if (data.success) {
-        alert("2FA enabled successfully!");
+        setIsEnabled(true);
+        setQrCode(null);
       } else {
         alert("Invalid 2FA code. Please try again.");
       }
@@ -55,6 +65,57 @@ export default function Enable2FA() {
       console.error("Error Enabling 2FA code:", error);
     }
   };
+
+  const disable2FA = async () => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/2fa/disable`,
+        {
+          method: "POST",
+          credentials: "include",
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to disable 2FA");
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setIsEnabled(false);
+        setStatusMessage("2FA disabled successfully");
+        setStatusType("success");
+      } else {
+        setStatusMessage("Failed to disable 2FA. Please try again.");
+        setStatusType("error");
+      }
+    } catch (error) {
+      console.error("Error disabling 2FA:", error);
+      setStatusMessage("Failed to disable 2FA. Please try again.");
+      setStatusType("error");
+    }
+  };
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/auth/profile`,
+          {
+            credentials: "include",
+          },
+        );
+        if (!res.ok) throw new Error("Failed to fetch profile");
+        const data = await res.json();
+        setIsEnabled(!!data.isTwoFAEnabled);
+      } catch (err) {
+        console.error("Error fetching profile:", err);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+  const twoFAEnabled = isEnabled === true;
 
   return (
     <div className="min-h-screen  flex items-center justify-center bg-gray-50 p-6">
@@ -69,48 +130,74 @@ export default function Enable2FA() {
           </p>
         </div>
 
-        {/* Enable 2FA Button */}
-        <div className="flex justify-center">
-          <button
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-xl shadow transition"
-            onClick={generateSecret}
-          >
-            Generate 2FA Secret
-          </button>
-        </div>
+        {/* Enable / Disable Buttons */}
+        {twoFAEnabled ? (
+          <div className="flex justify-center">
+            <button
+              className="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-xl shadow transition"
+              onClick={disable2FA}
+            >
+              Disable 2FA
+            </button>
+          </div>
+        ) : (
+          <div className="flex justify-center">
+            <button
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-xl shadow transition"
+              onClick={generateSecret}
+            >
+              Generate 2FA Secret
+            </button>
+          </div>
+        )}
 
         {/* QR Code Display */}
-        <div className="flex justify-center">
-          <div className="w-40 h-40 bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center rounded-xl">
-            {qrCode && (
-              <img src={qrCode} alt="2FA QR Code" className="w-32 h-32" />
-            )}
+        {!twoFAEnabled && (
+          <div className="flex justify-center">
+            <div className="w-40 h-40 bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center rounded-xl">
+              {qrCode && (
+                <img src={qrCode} alt="2FA QR Code" className="w-32 h-32" />
+              )}
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Status message (success/error) */}
+        {statusMessage && (
+          <p
+            className={`mt-2 text-sm ${statusType === "success" ? "text-green-600" : "text-red-600"}`}
+          >
+            {statusMessage}
+          </p>
+        )}
 
         {/* Input Field */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Enter 2FA Code
-          </label>
-          <input
-            type="text"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            placeholder="123456"
-            className="w-full px-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition text-gray-900"
-          />
-        </div>
+        {!twoFAEnabled && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Enter 2FA Code
+            </label>
+            <input
+              type="text"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="123456"
+              className="w-full px-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition text-gray-900"
+            />
+          </div>
+        )}
 
         {/* Confirm Button */}
-        <div className="flex justify-center">
-          <button
-            className="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-xl shadow transition"
-            onClick={enable2FA}
-          >
-            Confirm Code
-          </button>
-        </div>
+        {!twoFAEnabled && (
+          <div className="flex justify-center">
+            <button
+              className="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-xl shadow transition"
+              onClick={enable2FA}
+            >
+              Confirm Code
+            </button>
+          </div>
+        )}
       </div>
     </div>
     // <div>
