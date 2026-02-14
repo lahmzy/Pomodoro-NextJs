@@ -79,7 +79,7 @@ export default function PomodoroDashboard() {
             </button>
 
             <button
-              onClick={() => startSession("short_break")}
+              onClick={() => startSession("long_break")}
               className="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded shaddow text-white"
             >
               Long Break
