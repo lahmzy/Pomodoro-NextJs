@@ -65,7 +65,7 @@ export default function Navbar() {
     <nav className=" shadow-md px-4 py-3 relative bg-[#fff]">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
         <Link href="/" className="text-xl font-bold text-gray-800">
-          AI Pomodoro
+          Sentinel Pomodoro
         </Link>
 
         {/* Desktop Menu */}
